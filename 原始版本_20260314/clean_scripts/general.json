@@ -1,0 +1,39 @@
+{
+  "name": "通用清理脚本",
+  "domains": ["*"],
+  "version": "1.0",
+  "rules": {
+    "remove_selectors": [
+      "[class*='login']",
+      "[class*='Login']",
+      "[class*='signin']",
+      "[class*='sign-in']",
+      "[class*='register']",
+      "[class*='Register']",
+      "[class*='modal']",
+      "[class*='Modal']",
+      "[class*='popup']",
+      "[class*='Popup']",
+      "[class*='overlay']",
+      "[class*='Overlay']",
+      "[class*='paywall']",
+      "[class*='Paywall']",
+      "[class*='subscribe']",
+      "[class*='Subscribe']",
+      "[class*='vip']",
+      "[class*='VIP']",
+      "[class*='premium']",
+      "[class*='Premium']",
+      "[class*='ad-']",
+      "[class*='ads-']",
+      "[class*='advertisement']",
+      "[id*='ad-']",
+      "[id*='ads-']",
+      "[aria-modal='true']",
+      "[role='dialog']",
+      "iframe[src*='ad']",
+      "iframe[src*='banner']"
+    ],
+    "remove_text_patterns": ["登录", "注册", "Subscribe", "Login", "Sign in", "Sign Up"]
+  }
+}

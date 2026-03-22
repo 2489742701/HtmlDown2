@@ -1,0 +1,31 @@
+{
+  "name": "知乎清理脚本",
+  "domains": ["zhihu.com", "zhuanlan.zhihu.com", "www.zhihu.com"],
+  "version": "1.0",
+  "rules": {
+    "remove_selectors": [
+      ".Modal-wrapper",
+      ".Modal-inner",
+      ".SignFlow",
+      ".LoginContainer",
+      ".sign-flow",
+      ".login-container",
+      "[class*='login']",
+      "[class*='Login']",
+      "[class*='modal']",
+      "[class*='Modal']",
+      "[class*='popup']",
+      "[class*='Popup']",
+      "[class*='overlay']",
+      "[class*='Overlay']",
+      "[class*='paywall']",
+      "[class*='Paywall']",
+      "[aria-modal='true']",
+      "[role='dialog']",
+      ".css-1ynzxqw",
+      ".Modal-exploreSign",
+      ".SignFlowHomepage"
+    ],
+    "remove_text_patterns": ["登录", "注册", "登录知乎", "扫码登录"]
+  }
+}

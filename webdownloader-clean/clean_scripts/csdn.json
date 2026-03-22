@@ -1,0 +1,29 @@
+{
+  "name": "CSDN清理脚本",
+  "domains": ["csdn.net", "blog.csdn.net", "www.csdn.net"],
+  "version": "1.0",
+  "rules": {
+    "remove_selectors": [
+      ".passport-login",
+      ".login-mark",
+      ".vip-read",
+      ".article-read-more",
+      ".btn-read-more",
+      "[class*='login']",
+      "[class*='Login']",
+      "[class*='modal']",
+      "[class*='Modal']",
+      "[class*='popup']",
+      "[class*='Popup']",
+      "[class*='paywall']",
+      "[class*='Paywall']",
+      "[class*='vip']",
+      "[class*='VIP']",
+      "[class*='readmore']",
+      "[class*='read-more']",
+      "[aria-modal='true']",
+      "[role='dialog']"
+    ],
+    "remove_text_patterns": ["登录", "注册", "VIP", "订阅", "阅读全文", "查看全文", "展开全文"]
+  }
+}

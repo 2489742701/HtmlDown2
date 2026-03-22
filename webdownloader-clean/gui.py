@@ -24,6 +24,12 @@ import json
 import multiprocessing
 import sys
 
+from ui_styles import UIStyles
+from ui_components import (
+    ModernButton, GlassCard, ModernInput, ModernProgressBar,
+    ModernLabel, ModernCheckbox, ModernDropdown, ModernTextArea
+)
+
 def is_frozen():
     return getattr(sys, 'frozen', False) or globals().get('__compiled__') is not None
 
@@ -174,7 +180,7 @@ class WebDownloaderGUI:
         
         self.root.title(title)
         self.root.geometry(f"{window_width}x{window_height}+{pos_x}+{pos_y}")
-        self.root.configure(bg='#f5f5f5')
+        self.root.configure(bg=UIStyles.COLORS['bg_main'])
         
         self.root.bind("<Configure>", self._on_window_configure)
         self.root.bind("<FocusIn>", self._on_window_focus_in)
@@ -211,6 +217,7 @@ class WebDownloaderGUI:
         self.auto_localize_var = tk.BooleanVar(value=False)
         self.path_mode_var = tk.StringVar(value="relative")
         
+        self.use_webview_var = tk.BooleanVar(value=False)
         self.device_var = tk.StringVar(value="desktop")
         self.wait_mode_var = tk.StringVar(value="no_wait")
         self.custom_wait_var = tk.IntVar(value=15)
@@ -252,6 +259,7 @@ class WebDownloaderGUI:
         self.pack_lock_password = tk.StringVar()
         self.pack_lock_mode = tk.StringVar(value="always")
         # 文件锁联系人信息（用于密码忘记时的联系）
+        self.pack_lock_contact_type = tk.StringVar(value="QQ")  # 联系类型：QQ、微信、电话等
         self.pack_lock_contact_info = tk.StringVar(value="")    # 联系信息
         
         self.localize_website_dir = tk.StringVar()
@@ -443,48 +451,30 @@ class WebDownloaderGUI:
 
     def setup_styles(self):
         style = ttk.Style()
-        style.configure("Header.TLabel", 
-                       font=("Microsoft YaHei", 10, "bold"),
-                       foreground="#2c3e50")
-        style.configure("Bold.TLabel", 
-                       font=("Microsoft YaHei", 9, "bold"),
-                       foreground="#34495e")
-        style.configure("Primary.TButton",
-                       font=("Microsoft YaHei", 10, "bold"),
-                       foreground="white",
-                       background="#3498db")
-        style.configure("Success.TButton",
-                       font=("Microsoft YaHei", 10, "bold"),
-                       foreground="white",
-                       background="#27ae60")
-        style.configure("Frame.TFrame", background="#f8f9fa")
+        UIStyles.configure_style(style)
 
     def create_widgets(self):
-        main_container = ttk.Frame(self.root, style="Frame.TFrame")
-        main_container.pack(fill="both", expand=True, padx=15, pady=15)
+        main_container = tk.Frame(self.root, bg=UIStyles.COLORS['bg_main'])
+        main_container.pack(fill="both", expand=True)
         
         self.create_header(main_container)
         
-        self.notebook = ttk.Notebook(main_container)
-        self.notebook.pack(fill="both", expand=True, pady=10)
+        content_container = tk.Frame(main_container, bg=UIStyles.COLORS['bg_main'])
+        content_container.pack(fill="both", expand=True)
         
-        self.download_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.download_tab, text="📥 下载模式")
+        self.content_area = tk.Frame(content_container, bg=UIStyles.COLORS['bg_main'])
+        self.content_area.pack(side="left", fill="both", expand=True)
         
-        self.literature_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.literature_tab, text="📚 文献下载")
+        self.download_tab = tk.Frame(self.content_area, bg=UIStyles.COLORS['bg_main'])
+        self.literature_tab = tk.Frame(self.content_area, bg=UIStyles.COLORS['bg_main'])
+        self.browse_tab = tk.Frame(self.content_area, bg=UIStyles.COLORS['bg_main'])
+        self.pack_tab = tk.Frame(self.content_area, bg=UIStyles.COLORS['bg_main'])
+        self.localize_tab = tk.Frame(self.content_area, bg=UIStyles.COLORS['bg_main'])
+        self.env_tab = tk.Frame(self.content_area, bg=UIStyles.COLORS['bg_main'])
         
-        self.browse_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.browse_tab, text="📁 资源管理")
+        self.current_tab = self.download_tab
         
-        self.pack_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.pack_tab, text="📦 打包模式")
-        
-        self.localize_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.localize_tab, text="🌐 本地化部署")
-        
-        self.env_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.env_tab, text="🔧 环境管理")
+        self.create_sidebar(content_container)
         
         self.create_download_config_two_columns(self.download_tab)
         self.create_literature_config(self.literature_tab)
@@ -493,9 +483,9 @@ class WebDownloaderGUI:
         self.create_localize_config(self.localize_tab)
         self.create_env_config(self.env_tab)
         
-        self.create_status_bar(main_container)
+        self.download_tab.pack(fill="both", expand=True)
         
-        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+        self.create_status_bar(main_container)
         
         self.root.after(100, self.show_announcement)
         self.root.after(200, self._auto_search_browsers)
@@ -531,6 +521,118 @@ class WebDownloaderGUI:
         about_btn.pack(side="right")
         
         self._create_menubar()
+    
+    def create_sidebar(self, parent):
+        """创建侧边栏导航"""
+        sidebar = tk.Frame(parent, bg=UIStyles.COLORS['bg_main'], width=260)
+        sidebar.pack(side="left", fill="y")
+        sidebar.pack_propagate(False)
+        
+        logo_frame = tk.Frame(sidebar, bg=UIStyles.COLORS['bg_card'])
+        logo_frame.pack(fill="x", padx=10, pady=15)
+        
+        logo_label = tk.Label(
+            logo_frame,
+            text="🌐",
+            font=("Microsoft YaHei UI", 32),
+            bg=UIStyles.COLORS['bg_card'],
+            fg=UIStyles.COLORS['primary_light']
+        )
+        logo_label.pack()
+        
+        app_name_label = tk.Label(
+            logo_frame,
+            text="网页下载器",
+            font=("Microsoft YaHei UI", 12, "bold"),
+            bg=UIStyles.COLORS['bg_card'],
+            fg=UIStyles.COLORS['text_primary']
+        )
+        app_name_label.pack(pady=(5, 0))
+        
+        version_label = tk.Label(
+            logo_frame,
+            text="v2.0 专业版",
+            font=("Microsoft YaHei UI", 9),
+            bg=UIStyles.COLORS['bg_card'],
+            fg=UIStyles.COLORS['text_secondary']
+        )
+        version_label.pack()
+        
+        nav_items = [
+            ('download', '📥 下载模式', self.download_tab),
+            ('literature', '📚 文献下载', self.literature_tab),
+            ('browse', '📁 资源管理', self.browse_tab),
+            ('pack', '📦 打包模式', self.pack_tab),
+            ('localize', '🌐 本地化部署', self.localize_tab),
+            ('env', '🔧 环境管理', self.env_tab),
+        ]
+        
+        for item_id, item_text, tab_frame in nav_items:
+            def make_switch(tab):
+                return lambda: self.switch_tab(tab)
+            
+            btn = tk.Button(
+                sidebar,
+                text=item_text,
+                command=make_switch(tab_frame),
+                font=UIStyles.FONTS['body'],
+                bg=UIStyles.COLORS['bg_main'],
+                fg=UIStyles.COLORS['text_secondary'],
+                relief='flat',
+                bd=0,
+                padx=20,
+                pady=12,
+                cursor='hand2',
+                anchor='w'
+            )
+            btn.pack(fill="x", padx=10, pady=5)
+            
+            def on_enter(event, b=btn):
+                b.config(bg=UIStyles.COLORS['bg_card'], fg=UIStyles.COLORS['primary_light'])
+            
+            def on_leave(event, b=btn):
+                if tab_frame != self.current_tab:
+                    b.config(bg=UIStyles.COLORS['bg_main'], fg=UIStyles.COLORS['text_secondary'])
+            
+            btn.bind('<Enter>', on_enter)
+            btn.bind('<Leave>', on_leave)
+            
+            setattr(self, f'nav_btn_{item_id}', btn)
+        
+        status_frame = tk.Frame(sidebar, bg=UIStyles.COLORS['bg_card'])
+        status_frame.pack(side="bottom", fill="x", padx=10, pady=15)
+        
+        status_label = tk.Label(
+            status_frame,
+            text="许可证状态",
+            font=UIStyles.FONTS['small'],
+            bg=UIStyles.COLORS['bg_card'],
+            fg=UIStyles.COLORS['text_secondary']
+        )
+        status_label.pack(anchor='w', pady=(0, 5))
+        
+        license_status = "已激活" if self.trial_remaining == 0 else f"试用中 ({self.trial_remaining}次)"
+        license_color = UIStyles.COLORS['success'] if self.trial_remaining == 0 else UIStyles.COLORS['warning']
+        
+        license_label = tk.Label(
+            status_frame,
+            text=license_status,
+            font=UIStyles.FONTS['body'],
+            bg=UIStyles.COLORS['bg_card'],
+            fg=license_color
+        )
+        license_label.pack(anchor='w')
+    
+    def switch_tab(self, tab_frame):
+        """切换标签页"""
+        if self.current_tab:
+            self.current_tab.pack_forget()
+        
+        self.current_tab = tab_frame
+        tab_frame.pack(fill="both", expand=True)
+        
+        if tab_frame == self.browse_tab:
+            self.refresh_resource_list()
     
     def _create_menubar(self):
         pass
@@ -701,6 +803,7 @@ class WebDownloaderGUI:
         self.log_area.tag_config("success", foreground="#27ae60")
         self.log_area.tag_config("error", foreground="#e74c3c")
         self.log_area.tag_config("warning", foreground="#f39c12")
+        self.log_area.tag_config("info", foreground="#3498db")
         
         log_control_frame = ttk.Frame(log_card)
         log_control_frame.pack(fill="x", pady=(5, 0))
@@ -826,10 +929,10 @@ class WebDownloaderGUI:
     def _on_download_mode_change(self):
         mode = self.download_mode_var.get()
         if mode == "single":
-            self._mode_info_label.config(text="📄 单页下载：仅下载当前页面，不爬取链接")
+            self._mode_info_label.config(text="下载单个网页")
             state = 'disabled'
         else:
-            self._mode_info_label.config(text="🕷️ 爬取下载：递归爬取整站内容")
+            self._mode_info_label.config(text="爬取整站内容")
             state = 'normal'
         
         try:
@@ -840,10 +943,8 @@ class WebDownloaderGUI:
             self.radio_custom.config(state=state)
             if state == 'disabled':
                 self.custom_pages_spin.config(state='disabled')
-                self.btn_preview.config(state='disabled')
             else:
                 self.update_pages_state()
-                self.btn_preview.config(state='normal')
         except:
             pass
     
@@ -1282,25 +1383,10 @@ class WebDownloaderGUI:
         webview_row = ttk.Frame(anti_frame)
         webview_row.pack(fill="x", pady=5)
         ttk.Label(webview_row, text="反爬模式:", style="Bold.TLabel").pack(side="left")
-        
-        def go_to_literature_download():
-            result = messagebox.askyesno(
-                "功能提示",
-                "🌐 浏览器绕过反爬功能已整合到「文献下载」模块。\n\n"
-                "文献下载支持：\n"
-                "• 使用 Playwright 浏览器绕过反爬\n"
-                "• 支持登录后下载（知乎/CSDN等）\n"
-                "• 批量下载多个页面\n\n"
-                "是否跳转到文献下载页面？",
-                icon='question'
-            )
-            if result:
-                settings_window.destroy()
-                self.notebook.select(1)
-        
-        ttk.Button(webview_row, text="🌐 使用浏览器绕过反爬 (点击跳转)", 
-                  command=go_to_literature_download, style="Primary.TButton").pack(side="left", padx=15)
-        ttk.Label(webview_row, text="(适用于知乎/CSDN等，支持登录)", 
+        self._settings_use_webview = tk.BooleanVar(value=self.use_webview_var.get())
+        ttk.Checkbutton(webview_row, text="🌐 使用浏览器绕过反爬 (支持登录)", 
+                       variable=self._settings_use_webview).pack(side="left", padx=15)
+        ttk.Label(webview_row, text="(适用于知乎/CSDN等)", 
                  foreground="#95a5a6").pack(side="left", padx=5)
         
         device_row = ttk.Frame(anti_frame)
@@ -1363,6 +1449,7 @@ class WebDownloaderGUI:
         btn_frame.pack(fill="x", pady=20)
         
         def apply_settings():
+            self.use_webview_var.set(self._settings_use_webview.get())
             settings_window.destroy()
         
         ttk.Button(btn_frame, text="✅ 确定", command=apply_settings, style="Success.TButton").pack(side="right", padx=10)
@@ -3922,12 +4009,9 @@ html, body, div, p, span, h1, h2, h3, h4, h5, h6, article, section, main, pre, c
             self.monitor_url_listbox.see(tk.END)
     
     def on_closing(self):
-        """窗口关闭处理 - 使用淡出动画"""
         self._stop_monitor = True
         if hasattr(self, '_clipboard_monitor_thread'):
             self._clipboard_monitor_thread.join(timeout=1)
-        # 注意：实际的关闭动画在 main.py 中处理
-        # 这里只执行清理工作
         self.root.destroy()
     
     def select_literature_output(self):
@@ -7739,23 +7823,14 @@ html, body, div, p, span, h1, h2, h3, h4, h5, h6, article, section, main, pre, c
 
     def run_logic(self):
         try:
-            download_mode = self.download_mode_var.get()
-            is_single_page = (download_mode == "single")
-            
-            if is_single_page:
-                depth_value = 0
-                max_pages = 1
-                depth_description = "单页模式"
-            else:
-                depth_mode = self.depth_mode_var.get()
-                depth_value = self.depth_var.get()
-                depth_description = {
-                    "page_only": "仅本页",
-                    "page_next": "本页+下页",
-                    "page_next2": "本页+下2页",
-                    "custom": f"自定义({depth_value}层)"
-                }.get(depth_mode, f"深度{depth_value}")
-                max_pages = self.max_pages_var.get()
+            depth_mode = self.depth_mode_var.get()
+            depth_value = self.depth_var.get()
+            depth_description = {
+                "page_only": "仅本页",
+                "page_next": "本页+下页",
+                "page_next2": "本页+下2页",
+                "custom": f"自定义({depth_value}层)"
+            }.get(depth_mode, f"深度{depth_value}")
             
             wait_mode = self.wait_mode_var.get()
             wait_time_map = {
@@ -7770,7 +7845,7 @@ html, body, div, p, span, h1, h2, h3, h4, h5, h6, article, section, main, pre, c
             params = {
                 'url': self.url_var.get(),
                 'output_dir': self.current_task_dir,
-                'depth': depth_value,
+                'depth': self.depth_var.get(),
                 'mode': self.mode_var.get(),
                 'filter_img': self.filter_img_var.get(),
                 'filter_video': self.filter_video_var.get(),
@@ -7778,34 +7853,47 @@ html, body, div, p, span, h1, h2, h3, h4, h5, h6, article, section, main, pre, c
                 'target_fmt': self.target_fmt_var.get(),
                 'device_type': self.device_var.get(),
                 'wait_time': wait_time,
-                'max_pages': max_pages,
-                'is_single_page': is_single_page
+                'max_pages': self.max_pages_var.get(),
+                'use_webview': self.use_webview_var.get()
             }
             
             self.root.after(0, lambda: self.log(f"📂 创建任务目录: {self.current_task_dir}", "info"))
-            if is_single_page:
-                self.root.after(0, lambda: self.log(f"📄 下载模式: 单页下载（仅下载当前页面）", "info"))
-            else:
-                self.root.after(0, lambda: self.log(f"🕷️ 下载模式: 爬取下载", "info"))
-                self.root.after(0, lambda: self.log(f"📊 爬取深度: {depth_description}", "info"))
-                if max_pages == -1:
-                    self.root.after(0, lambda: self.log(f"📄 页数限制: 无限制", "info"))
-                else:
-                    self.root.after(0, lambda: self.log(f"📄 页数限制: {max_pages}页", "info"))
+            self.root.after(0, lambda: self.log(f"📊 爬取深度: {depth_description}", "info"))
             device_text = "💻 电脑访问" if self.device_var.get() == "desktop" else "📱 手机访问"
             self.root.after(0, lambda: self.log(f"📱 设备标识: {device_text}", "info"))
             if wait_time > 0:
                 self.root.after(0, lambda: self.log(f"⏱️  页面等待: {wait_time} 秒", "info"))
             
-            self.downloader = CoreDownloader(self, params)
-            self.downloader.start()
-            self.root.after(0, self.on_finish_success)
+            if self.use_webview_var.get():
+                self.root.after(0, lambda: self.log("🌐 使用浏览器模式绕过反爬...", "info"))
+                from webview_downloader import download_with_webview
+                threading.Thread(target=self._run_webview_download, args=(params,), daemon=True).start()
+            else:
+                self.downloader = CoreDownloader(self, params)
+                self.downloader.start()
+                self.root.after(0, self.on_finish_success)
         except Exception as e:
             error_msg = f"下载过程中发生错误: {str(e)}"
             error_details = traceback.format_exc()
             self.root.after(0, lambda: self.log(f"❌ 发生错误: {str(e)}", "error"))
             self.root.after(0, lambda: self.status_var.set("🔴 下载失败"))
             self.root.after(0, lambda: ErrorDialog(self.root, "下载错误", error_msg, error_details))
+        finally:
+            self.is_running = False
+            self.root.after(0, lambda: self.btn_start.config(state="normal", text="🚀 开始下载"))
+            self.root.after(0, lambda: self.btn_stop.config(state="disabled", text="⏹️ 停止下载"))
+
+    def _run_webview_download(self, params):
+        try:
+            from webview_downloader import download_with_webview
+            success = download_with_webview(self, params)
+            if success:
+                self.root.after(0, self.on_finish_success)
+            else:
+                self.root.after(0, lambda: self.log("❌ WebView下载失败", "error"))
+                self.root.after(0, lambda: self.status_var.set("🔴 下载失败"))
+        except Exception as e:
+            self.root.after(0, lambda: self.log(f"❌ WebView错误: {str(e)}", "error"))
         finally:
             self.is_running = False
             self.root.after(0, lambda: self.btn_start.config(state="normal", text="🚀 开始下载"))
@@ -7952,7 +8040,7 @@ html, body, div, p, span, h1, h2, h3, h4, h5, h6, article, section, main, pre, c
                 eye_btn.config(text="👁️")
         
         eye_btn = tk.Button(lock_row1, text="👁️", command=toggle_password_visibility,
-                           font=("Microsoft YaHei", 8), width=3, relief="flat",
+                           font=("Microsoft YaHei", 8), width=2, relief="flat",
                            bg="#f0f0f0", cursor="hand2")
         eye_btn.pack(side="left", padx=2)
         
@@ -7964,11 +8052,17 @@ html, body, div, p, span, h1, h2, h3, h4, h5, h6, article, section, main, pre, c
         # 第二行：文件锁联系人信息
         lock_row2 = ttk.Frame(lock_card)
         lock_row2.pack(fill="x", pady=5)
-        ttk.Label(lock_row2, text="忘记密码留言:", style="Bold.TLabel").pack(side="left", padx=5)
+        ttk.Label(lock_row2, text="忘记密码联系:", style="Bold.TLabel").pack(side="left", padx=5)
         
-        # 留言内容输入框
+        # 联系类型选择（QQ、微信、电话等）
+        contact_type_combo = ttk.Combobox(lock_row2, textvariable=self.pack_lock_contact_type, 
+                                          values=["QQ", "微信", "电话", "邮箱"], 
+                                          width=8, font=("Microsoft YaHei", 9), state="readonly")
+        contact_type_combo.pack(side="left", padx=5)
+        
+        # 联系信息输入框
         contact_entry = ttk.Entry(lock_row2, textvariable=self.pack_lock_contact_info, 
-                                  width=40, font=("Microsoft YaHei", 9))
+                                  width=25, font=("Microsoft YaHei", 9))
         contact_entry.pack(side="left", padx=5, fill="x", expand=True)
         
         # 提示标签
@@ -9073,6 +9167,7 @@ html, body, div, p, span, h1, h2, h3, h4, h5, h6, article, section, main, pre, c
             'lock_password': self.pack_lock_password.get() if self.pack_enable_lock.get() else '',
             'lock_mode': self.pack_lock_mode.get(),
             # 文件锁联系人信息（用于密码忘记时联系）
+            'lock_contact_type': self.pack_lock_contact_type.get() if self.pack_enable_lock.get() else '',
             'lock_contact_info': self.pack_lock_contact_info.get() if self.pack_enable_lock.get() else ''
         }
 
@@ -9088,15 +9183,7 @@ html, body, div, p, span, h1, h2, h3, h4, h5, h6, article, section, main, pre, c
         else:
             inject_js_content = ''
         
-        inject_config_js_path = get_resource_path('inject_config.js')
-        if os.path.exists(inject_config_js_path):
-            with open(inject_config_js_path, 'r', encoding='utf-8') as f:
-                inject_config_js_content = f.read()
-        else:
-            inject_config_js_content = ''
-        
         inject_js_b64 = base64.b64encode(inject_js_content.encode('utf-8')).decode('utf-8')
-        inject_config_js_b64 = base64.b64encode(inject_config_js_content.encode('utf-8')).decode('utf-8')
         
         try:
             with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, encoding='utf-8') as f:
@@ -9116,9 +9203,6 @@ with open(config_file, 'r', encoding='utf-8') as f:
 
 INJECT_JS_B64 = "{inject_js_b64}"
 INJECT_JS = base64.b64decode(INJECT_JS_B64).decode('utf-8')
-
-INJECT_CONFIG_JS_B64 = "{inject_config_js_b64}"
-INJECT_CONFIG_JS = base64.b64decode(INJECT_CONFIG_JS_B64).decode('utf-8')
 
 def get_machine_id():
     try:
@@ -9189,24 +9273,25 @@ def show_password_dialog():
             eye_btn.config(text="👁️")
     
     eye_btn = tk.Button(password_frame, text="👁️", command=toggle_password,
-                       font=("Microsoft YaHei", 8), width=3, relief="flat",
+                       font=("Microsoft YaHei", 8), width=2, relief="flat",
                        bg="#f0f0f0", cursor="hand2")
     eye_btn.pack(side="left", padx=2)
     
     # 问号按钮 - 显示联系人信息
     def show_contact_info():
+        contact_type = config.get('lock_contact_type', '')
         contact_info = config.get('lock_contact_info', '')
         
-        if contact_info:
+        if contact_type and contact_info:
             messagebox.showinfo("忘记密码？", 
-                f"如果您忘记了密码，请联系程序发布者：\\n\\n"
-                f"{contact_info}\\n\\n"
+                f"如果您忘记了密码，请联系程序发布者：\n\n"
+                f"{contact_type}: {contact_info}\n\n"
                 f"请提供您的机器码以获取帮助。", 
                 parent=dialog)
         else:
             messagebox.showinfo("忘记密码？", 
-                "程序发布者未设置联系方式。\\n\\n"
-                "请尝试使用您设置密码时使用的常用密码，\\n"
+                "程序发布者未设置联系方式。\n\n"
+                "请尝试使用您设置密码时使用的常用密码，\n"
                 "或联系程序发布者获取帮助。", 
                 parent=dialog)
     
@@ -9221,7 +9306,7 @@ def show_password_dialog():
             result[0] = True
             dialog.destroy()
         else:
-            messagebox.showerror("密码错误", "密码不正确，请重试\\n\\n提示：点击密码框旁边的 ❓ 可查看联系方式", parent=dialog)
+            messagebox.showerror("密码错误", "密码不正确，请重试\n\n提示：点击密码框旁边的 ❓ 可查看联系方式", parent=dialog)
             password_var.set("")
             password_entry.focus()
     
@@ -9247,7 +9332,7 @@ def show_password_dialog():
     dialog.mainloop()
     return result[0]
 
-if config.get('enable_lock', False) and config.get('lock_password', '') != '':
+if config.get('enable_lock', False) and config.get('lock_password', ''):
     if not show_password_dialog():
         sys.exit(0)
 
@@ -9274,17 +9359,16 @@ try:
         show_nav = config.get('show_nav', True)
         
         if show_nav:
-            config_json = json.dumps({{
-                'titleBarColor': config.get('title_bar_color', '#2d2d2d'),
-                'textColor': config.get('text_color', '#ffffff'),
-                'borderColor': config.get('border_color', '#1a1a1a'),
-                'showNav': show_nav,
-                'showWindowControls': False,
-                'forceInternal': config.get('force_internal', False),
-                'customTitle': config.get('title', '预览')
-            }})
-            window.evaluate_js(INJECT_CONFIG_JS)
-            window.evaluate_js("setWebExeConfig(" + config_json + ");")
+            config_js = "window.__WEBEXE_CONFIG__ = {{"
+            config_js += "titleBarColor: '" + config.get('title_bar_color', '#2d2d2d') + "',"
+            config_js += "textColor: '" + config.get('text_color', '#ffffff') + "',"
+            config_js += "borderColor: '" + config.get('border_color', '#1a1a1a') + "',"
+            config_js += "showNav: " + str(show_nav).lower() + ","
+            config_js += "showWindowControls: false,"
+            config_js += "forceInternal: " + str(config.get('force_internal', False)).lower() + ","
+            config_js += "customTitle: '" + config.get('title', '预览') + "'"
+            config_js += "}};"
+            window.evaluate_js(config_js)
             window.evaluate_js(INJECT_JS)
     
     try:
@@ -9547,22 +9631,16 @@ finally:
         
         env_dir = self.get_python_env_path()
         
-        python_exe = None
-        
-        if os.path.exists(os.path.join(env_dir, 'python.exe')):
-            python_exe = os.path.join(env_dir, 'python.exe')
-        elif os.path.exists(os.path.join(env_dir, 'Scripts', 'python.exe')):
+        # 优先查找 python_env/python.exe（独立Python环境）
+        # 备选：python_env/Scripts/python.exe（某些venv结构的Python环境）
+        python_exe = os.path.join(env_dir, 'python.exe')
+        if not os.path.exists(python_exe):
             python_exe = os.path.join(env_dir, 'Scripts', 'python.exe')
-        else:
-            for root, dirs, files in os.walk(env_dir):
-                if 'python.exe' in files:
-                    python_exe = os.path.join(root, 'python.exe')
-                    break
         
         pyvenv_cfg = os.path.join(env_dir, 'pyvenv.cfg')
         
-        if python_exe and os.path.exists(python_exe):
-            self.pack_log(f"✅ 使用已有的Python环境: {python_exe}", "success")
+        if os.path.exists(python_exe):
+            self.pack_log(f"✅ 使用已有的Python环境: {env_dir}", "success")
             if os.path.exists(pyvenv_cfg):
                 self._fix_pyvenv_cfg(env_dir, python_exe)
             return python_exe
@@ -9658,20 +9736,11 @@ https://wwbfd.lanzoum.com/iyJBM3kb8coj
             
             update_progress(90, "正在验证环境...")
             
-            python_exe = None
-            
-            if os.path.exists(os.path.join(env_dir, 'python.exe')):
-                python_exe = os.path.join(env_dir, 'python.exe')
-            elif os.path.exists(os.path.join(env_dir, 'Scripts', 'python.exe')):
+            python_exe = os.path.join(env_dir, 'python.exe')
+            if not os.path.exists(python_exe):
                 python_exe = os.path.join(env_dir, 'Scripts', 'python.exe')
-            else:
-                for root, dirs, files in os.walk(env_dir):
-                    if 'python.exe' in files:
-                        python_exe = os.path.join(root, 'python.exe')
-                        self.pack_log(f"🔍 找到python.exe: {python_exe}", "info")
-                        break
             
-            if not python_exe or not os.path.exists(python_exe):
+            if not os.path.exists(python_exe):
                 raise RuntimeError("解压后找不到python.exe，环境包可能损坏")
             
             self._fix_pyvenv_cfg(env_dir, python_exe)
@@ -10053,6 +10122,7 @@ if errorlevel 1 (
             "lock_password": self.pack_lock_password.get() if self.pack_enable_lock.get() else "",
             "lock_mode": self.pack_lock_mode.get(),
             # 文件锁联系人信息（用于密码忘记时联系）
+            "lock_contact_type": self.pack_lock_contact_type.get() if self.pack_enable_lock.get() else "",
             "lock_contact_info": self.pack_lock_contact_info.get() if self.pack_enable_lock.get() else ""
         }
         
@@ -10066,15 +10136,7 @@ if errorlevel 1 (
         else:
             inject_js_content = ''
         
-        inject_config_js_path = get_resource_path('inject_config.js')
-        if os.path.exists(inject_config_js_path):
-            with open(inject_config_js_path, 'r', encoding='utf-8') as f:
-                inject_config_js_content = f.read()
-        else:
-            inject_config_js_content = ''
-        
         inject_js_b64 = base64.b64encode(inject_js_content.encode('utf-8')).decode('utf-8')
-        inject_config_js_b64 = base64.b64encode(inject_config_js_content.encode('utf-8')).decode('utf-8')
         
         script_template = '''
 import webview
@@ -10116,9 +10178,6 @@ CONFIG = json.loads(base64.b64decode(CONFIG_B64).decode('utf-8'))
 
 INJECT_JS_B64 = "{inject_js_b64}"
 INJECT_JS = base64.b64decode(INJECT_JS_B64).decode('utf-8')
-
-INJECT_CONFIG_JS_B64 = "{inject_config_js_b64}"
-INJECT_CONFIG_JS = base64.b64decode(INJECT_CONFIG_JS_B64).decode('utf-8')
 
 def get_machine_id():
     try:
@@ -10218,24 +10277,25 @@ def show_password_dialog():
             eye_btn.config(text="👁️")
     
     eye_btn = tk.Button(password_frame, text="👁️", command=toggle_password,
-                       font=("Microsoft YaHei", 8), width=3, relief="flat",
+                       font=("Microsoft YaHei", 8), width=2, relief="flat",
                        bg="#f0f0f0", cursor="hand2")
     eye_btn.pack(side="left", padx=2)
     
     # 问号按钮 - 显示联系人信息
     def show_contact_info():
+        contact_type = CONFIG.get('lock_contact_type', '')
         contact_info = CONFIG.get('lock_contact_info', '')
         
-        if contact_info:
+        if contact_type and contact_info:
             messagebox.showinfo("忘记密码？", 
-                f"如果您忘记了密码，请联系程序发布者：\\n\\n"
-                f"{contact_info}\\n\\n"
+                f"如果您忘记了密码，请联系程序发布者：\n\n"
+                f"{contact_type}: {contact_info}\n\n"
                 f"请提供您的机器码以获取帮助。", 
                 parent=dialog)
         else:
             messagebox.showinfo("忘记密码？", 
-                "程序发布者未设置联系方式。\\n\\n"
-                "请尝试使用您设置密码时使用的常用密码，\\n"
+                "程序发布者未设置联系方式。\n\n"
+                "请尝试使用您设置密码时使用的常用密码，\n"
                 "或联系程序发布者获取帮助。", 
                 parent=dialog)
     
@@ -10252,7 +10312,7 @@ def show_password_dialog():
                 save_unlock_token()
             dialog.destroy()
         else:
-            messagebox.showerror("密码错误", "密码不正确，请重试\\n\\n提示：点击密码框旁边的 ❓ 可查看联系方式", parent=dialog)
+            messagebox.showerror("密码错误", "密码不正确，请重试\n\n提示：点击密码框旁边的 ❓ 可查看联系方式", parent=dialog)
             password_var.set("")
             password_entry.focus()
     
@@ -10294,7 +10354,7 @@ class Api:
 
 def main():
     try:
-        if CONFIG.get('enable_lock', False) and CONFIG.get('lock_password', '') != '':
+        if CONFIG.get('enable_lock', False) and CONFIG.get('lock_password', ''):
             lock_mode = CONFIG.get('lock_mode', 'always')
             if lock_mode == 'always':
                 if not show_password_dialog():
@@ -10391,17 +10451,16 @@ def main():
         def inject_ui():
             show_nav = CONFIG.get('show_nav', True)
             if show_nav:
-                config_json = json.dumps({{
-                    'titleBarColor': CONFIG.get('title_bar_color', '#2d2d2d'),
-                    'textColor': CONFIG.get('text_color', '#ffffff'),
-                    'borderColor': CONFIG.get('border_color', '#1a1a1a'),
-                    'showNav': show_nav,
-                    'showWindowControls': False,
-                    'forceInternal': CONFIG.get('force_internal', False),
-                    'customTitle': CONFIG.get('custom_title', 'App')
-                }})
-                window.evaluate_js(INJECT_CONFIG_JS)
-                window.evaluate_js("setWebExeConfig(" + config_json + ");")
+                config_js = f"window.__WEBEXE_CONFIG__ = {{\
+                    titleBarColor: '{CONFIG.get('title_bar_color', '#2d2d2d')}',\
+                    textColor: '{CONFIG.get('text_color', '#ffffff')}',\
+                    borderColor: '{CONFIG.get('border_color', '#1a1a1a')}',\
+                    showNav: {str(show_nav).lower()},\
+                    showWindowControls: false,\
+                    forceInternal: {str(CONFIG.get('force_internal', False)).lower()},\
+                    customTitle: '{CONFIG.get('custom_title', 'App')}'\
+                }};"
+                window.evaluate_js(config_js)
                 window.evaluate_js(INJECT_JS)
         
         try:
