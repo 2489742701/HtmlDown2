@@ -4,44 +4,39 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
 venv/
-ENV/
-env/
+venv312/
+*.egg-info/
+dist/
+build/
+*.spec
 
 # IDE
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
+# Project specific
+_trash/
+browser_data/
+browsers/
+browsers_backup/
+literature_downloads/
+logs/
+python_env/
+downloads/
+batch_downloads/
+pack_output/
+*.zip
+*.exe
+*.dll
 
-# PyInstaller
-*.spec
-build/
-dist/
+# Config and cache
+window_config.json
+no_show_*.txt
 
-# 临时文件
-*.log
+# Temp
 *.tmp
-*.bak
+*.temp
+.cache/
